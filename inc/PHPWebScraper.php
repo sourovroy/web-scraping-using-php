@@ -13,7 +13,7 @@ class PHPWebScraper
 	{
 		$requestReturn = self::sendHTTPRequest();
 		// print_r(htmlentities($requestReturn));
-		echo $requestReturn;
+		// echo $requestReturn;
 		$parsedData = self::parseHTMLString($requestReturn);
 	}// End of showList
 
@@ -48,8 +48,10 @@ class PHPWebScraper
 		$imageArray = self::getMoviesImage($fullHtml);
 
 		$runtimeGenreArray = self::getCertificateRuntimeGenre($fullHtml);
+
+		$descriptionArray = self::getDescription($fullHtml);
 		
-		// print_r($imageArray);
+		// print_r($runtimeGenreArray);
 	}// End of parseHTMLString
 
 	/**
@@ -90,9 +92,51 @@ class PHPWebScraper
 		$pattern = '/<p class="text-muted\s">(.*?)<\/p>/is';
 		preg_match_all($pattern, $htmlString, $blockMatches);
 		// print_r($blockMatches[1]);
-		foreach($blockMatches[1] as $blockMatche){
-			echo $blockMatche.'<br>';
+		$certificate = [];
+		$runtime = [];
+		$genre = [];
+		foreach($blockMatches[1] as $index => $blockMatch){
+			// Certificate
+			$pattern = '/<span class="certificate">(.*?)<\/span>/';
+			if(preg_match($pattern, $blockMatch, $match)){
+				$certificate[] = $match[1];
+			}else{
+				$certificate[] = '';
+			}
+
+			// Runtime
+			$pattern = '/<span class="runtime">(.*?)<\/span>/';
+			if(preg_match($pattern, $blockMatch, $match)){
+				$runtime[] = $match[1];
+			}else{
+				$runtime[] = '';
+			}
+
+			// Genre
+			$pattern = '/<span class="genre">\n(.*?)\s*?<\/span>/';
+			if(preg_match($pattern, $blockMatch, $match)){
+				$genre[] = $match[1];
+			}else{
+				$genre[] = '';
+			}
+
 		}//End foreach
+
+		return [
+			'certificate' => $certificate,
+			'runtime' => $runtime,
+			'genre' => $genre
+		];
 	}//End of getCertificateRuntimeGenre
+
+	/**
+	 * Get movie short description
+	 */
+	public static function getDescription($htmlString)
+	{
+		$pattern = '/<div class="ratings-bar">.*?<\/div>\n<p class="text-muted">(.*?)<\/p>/is';
+		preg_match_all($pattern, $htmlString, $matches);
+		print_r(array_map('trim', $matches[1]));
+	}// End of getDescription
 
 }//End of class
