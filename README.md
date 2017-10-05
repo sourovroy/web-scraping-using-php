@@ -1,4 +1,6 @@
 # PHP Web Scraper
 Scrap web HTML using PHP
 
-## Most highest IMDb rating 50 US movies
+## Scrap data form IMDb and show in own site
+
+![Screenshot](screenshot.png)

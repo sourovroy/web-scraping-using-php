@@ -11,16 +11,24 @@ class PHPWebScraper
 	 */
 	public static function showList()
 	{
-		$requestReturn = self::sendHTTPRequest();
-		// print_r(htmlentities($requestReturn));
-		// echo $requestReturn;
-		$parsedData = self::parseHTMLString($requestReturn);
+		if(isset($_GET['reload']) && $_GET['reload'] == 'data'){
+			// Get data through http request
+			$requestReturn = self::sendHTTPRequest();
+			
+			// Parse respond data
+			$parsedData = self::parseHTMLString($requestReturn);
+			header("Location: index.php");
+			exit;
+		}
+
+		// Generate the html
+		self::generateHtml();
 	}// End of showList
 
 	/**
 	 * Send HTTP request
 	 */
-	public static function sendHTTPRequest()
+	private static function sendHTTPRequest()
 	{
         $ch = curl_init(); 
         curl_setopt($ch, CURLOPT_URL, SCRAP_URL); 
@@ -39,7 +47,7 @@ class PHPWebScraper
 	/**
 	 * Parse the html string
 	 */
-	public static function parseHTMLString($fullHtml)
+	private static function parseHTMLString($fullHtml)
 	{
 		$titleArray = self::getMoviesTitle($fullHtml);
 
@@ -51,7 +59,18 @@ class PHPWebScraper
 
 		$descriptionArray = self::getDescription($fullHtml);
 		
-		// print_r($runtimeGenreArray);
+		$fullArray = self::mixAllTogather([
+			'title' => $titleArray,
+			'year' => $yearArray,
+			'image' => $imageArray,
+			'runtime_genre' => $runtimeGenreArray,
+			'description' => $descriptionArray,
+		]);
+
+		$data = serialize($fullArray);
+		file_put_contents(ROOT_PATH.'/database/database.txt', $data);
+		
+		return $fullArray;
 	}// End of parseHTMLString
 
 	/**
@@ -87,7 +106,7 @@ class PHPWebScraper
 	/**
 	 * Get certificate, runtime, genre
 	 */
-	public static function getCertificateRuntimeGenre($htmlString)
+	private static function getCertificateRuntimeGenre($htmlString)
 	{
 		$pattern = '/<p class="text-muted\s">(.*?)<\/p>/is';
 		preg_match_all($pattern, $htmlString, $blockMatches);
@@ -132,11 +151,60 @@ class PHPWebScraper
 	/**
 	 * Get movie short description
 	 */
-	public static function getDescription($htmlString)
+	private static function getDescription($htmlString)
 	{
-		$pattern = '/<div class="ratings-bar">.*?<\/div>\n<p class="text-muted">(.*?)<\/p>/is';
+		$pattern = '/\n<p class="text-muted">(.*?)<\/p>\n\s*<p class="">/is';
 		preg_match_all($pattern, $htmlString, $matches);
-		print_r(array_map('trim', $matches[1]));
+		$data = array_map('trim', $matches[1]);
+		$data = str_replace("\n", '', $data);
+		return $data;
 	}// End of getDescription
+
+	/**
+	 * Mix all indivisule array togather
+	 */
+	private static function mixAllTogather($allArray)
+	{
+		$counts = count($allArray, 1);
+		if($counts == 358){
+			$finalArray = [];
+			foreach($allArray['title'] as $index => $title){
+				$finalArray[] = [
+					'title' => $title,
+					'year' => $allArray['year'][$index],
+					'image' => $allArray['image'][$index],
+					'runtime' => $allArray['runtime_genre']['runtime'][$index],
+					'genre' => $allArray['runtime_genre']['genre'][$index],
+					'certificate' => $allArray['runtime_genre']['certificate'][$index],
+					'description' => $allArray['description'][$index],
+				];
+			}
+			return $finalArray;
+		}else{
+			die('Sorry!. Unable to get all data properly.');
+		}
+	}//End of mixAllTogather
+
+	/**
+	 * Genarate output html
+	 */
+	private static function generateHtml()
+	{
+		$movies = file_get_contents(ROOT_PATH.'/database/database.txt');
+		$movies = unserialize($movies);
+		include __DIR__ . '/html-output.php';
+	}// End of generateHtml
+
+	/**
+	 * Get large image from small image
+	 */
+	public static function getLargeImage($imageUrl)
+	{
+		$image = str_replace(",98", ",370", $imageUrl);
+		$image = str_replace("UY98", "UY370", $image);
+		$image = str_replace(",67", ",255", $image);
+		$image = str_replace("UX67", "UX255", $image);
+		return $image;
+	}//End of largeImage
 
 }//End of class

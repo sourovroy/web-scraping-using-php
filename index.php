@@ -9,12 +9,18 @@
 </head>
 <body>
 	
-	<section class="main-section">
-		<div class="container">
-			<div class="row justify-content-md-center">
-				<div class="col col-md-8">
-					<h2>Most highest IMDb rating 50 US movies</h2>
-					<?php PHPWebScraper::showList(); ?>
+	<section class="main-section album text-muted">
+		<div class="container text-center">
+			<h2>Most Popular 50 movies of 2017</h2>
+		</div>
+	
+		<div class="container mt-5">
+			<div class="row ">
+				<?php PHPWebScraper::showList(); ?>
+			</div>
+			<div class="row">
+				<div class="col mt-3">
+					<a href="?reload=data" class="btn btn-primary">Re-store database</a>
 				</div>
 			</div>
 		</div>
